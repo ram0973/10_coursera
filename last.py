@@ -24,8 +24,9 @@ async def fetch(url):
     #with asyncio.timeout(TIMEOUT, loop=loop)
     import async_timeout
     #with async_timeout.timeout(20, loop=session.loop):
-    async with session.get(url, timeout=60) as resp:
-        return await resp.text()
+    with aiohttp.Timeout(60):
+        async with session.get(url, timeout=60) as resp:
+            return await resp.text()
 
 async def loop(urls):
     tasks = [fetch(url) for url in urls]
