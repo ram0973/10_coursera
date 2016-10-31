@@ -22,8 +22,10 @@ def enable_win_unicode_console():
 
 async def fetch(url):
     #with asyncio.timeout(TIMEOUT, loop=loop)
-    async with session.get(url) as resp:
-        return await resp.text()
+    import async_timeout
+    with async_timeout.timeout(20, loop=session.loop):
+        async with session.get(url) as resp:
+            return await resp.text()
 
 async def loop(urls):
     tasks = [fetch(url) for url in urls]
