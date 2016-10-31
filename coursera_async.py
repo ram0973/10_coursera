@@ -129,7 +129,9 @@ if __name__ == '__main__':
 
     coroutines = [download_file(url) for url in courses_urls]
 
-    eloop = asyncio.get_event_loop()
+    #eloop = asyncio.get_event_loop()
+    eloop = uvloop.new_event_loop()
+    asyncio.set_event_loop(eloop)
     eloop.run_until_complete(wait_with_progressbar(coroutines))
     eloop.close()
     session.close()
