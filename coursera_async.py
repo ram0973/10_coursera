@@ -13,6 +13,7 @@ from lxml import etree
 from bs4 import BeautifulSoup
 from tqdm import tqdm
 import time
+import uvloop
 
 
 COURSERA_COURSES_XML = 'https://www.coursera.org/sitemap~www~courses.xml'
