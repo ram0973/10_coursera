@@ -1,3 +1,6 @@
-requests==2.11.1
+lxml==3.6.4
 openpyxl==2.3.5
+requests==2.11.1
 beautifulsoup4==4.5.1
+win-unicode-console==0.5
+tqdm==4.9.0
