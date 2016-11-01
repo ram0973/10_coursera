@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import argparse
 import json
 import random
 import re
@@ -12,8 +13,9 @@ import time
 from openpyxl import Workbook
 
 COURSERA_COURSES_XML = 'https://www.coursera.org/sitemap~www~courses.xml'
-COURSES_COUNT = 10
+COURSES_COUNT = 20
 OUTPUT_XSLX_FILENAME = 'Coursera_courses.xslx'
+
 
 def enable_win_unicode_console():
     """
@@ -54,8 +56,8 @@ def handle_requests_library_exceptions(decorated):
 def get_courses_list(url: str) -> list:
     """
     Получаем список url курсов с сервера
-    :param url:
-    :return:
+    :param url: url XML файла
+    :return: список всех url курсов
     """
     response = requests.get(url)
     response.raise_for_status()
@@ -66,9 +68,9 @@ def get_courses_list(url: str) -> list:
 @handle_requests_library_exceptions
 def get_course_info(course_slug: str) -> list:
     """
-    Получаем данные по курсу с его веб-страницы, а если их там нет, из API
-    :param course_slug:
-    :return:
+    Получаем данные по курсу с его веб-страницы
+    :param course_slug: url курса
+    :return: список данных по курсу
     """
     response = requests.get(course_slug)
     response.raise_for_status()
@@ -98,10 +100,12 @@ def get_course_info(course_slug: str) -> list:
 
 
 @handle_requests_library_exceptions
-def get_course_info_from_api(course_slug: str) -> dict:
+def get_course_info_from_api(course_slug: str) -> list:
     """
-    :param course_slug:
-    :return:
+    Получаем данные по курсу из api
+    https://building.coursera.org/app-platform/catalog/
+    :param course_slug: url курса
+    :return: список данных по курсу (без рейтинга, его нет в api)
     """
     COURSES_API_URL_HEAD = 'https://www.coursera.org/learn/'
     shorted_slug = course_slug.replace(COURSES_API_URL_HEAD, '')
@@ -116,8 +120,9 @@ def get_course_info_from_api(course_slug: str) -> dict:
 
     lang = course['elements'][0]['primaryLanguages'] + \
         course['elements'][0]['subtitleLanguages']
+    lang = ', '.join(lang)
 
-    # coursera api дает epoch time в миллисекундах, или строку с описанем даты
+    # coursera api дает epoch time в миллисекундах, или строку с описанием даты
     start_date = course['elements'][0]['startDate']
     if start_date:
         try:
@@ -128,10 +133,16 @@ def get_course_info_from_api(course_slug: str) -> dict:
 
     weeks = course['elements'][0]['workload']
 
-    return dict(title=title, lang=lang, start_date=start_date, weeks=weeks)
+    #  тут ratings = None потому что его нет в api
+    return [title, lang, start_date, weeks, None]
 
 
 def output_courses_info_to_xlsx(courses: list, filepath: str):
+    """
+    Вывводим данные по курсам в файл
+    :param courses: список данных по курсам
+    :param filepath: путь к файлу
+    """
     wb = Workbook()
     ws = wb.active
     for course in courses:
@@ -141,18 +152,37 @@ def output_courses_info_to_xlsx(courses: list, filepath: str):
 
 if __name__ == '__main__':
 
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--mode', '--m',
+                        help='Введите "api" или "html" без кавычек',
+                        choices=['api', 'html'],
+                        default='html')
+    parser.add_argument('--count', '--c',
+                        help='Введите количество курсов',
+                        default=COURSES_COUNT,
+                        type=int)
+    # тут проверка, целое ли это число будет в argparse
+    courses_count = abs(parser.parse_args().count)
+    courses_fetch_mode = parser.parse_args().mode
+
     enable_win_unicode_console()
 
-    print('Получаем данные по курсам Coursera с сервера')
-
+    print('Получаем данные по %s курсам Coursera' % courses_count)
     courses_urls = get_courses_list(COURSERA_COURSES_XML)
+
     random.shuffle(courses_urls)
-    selected_courses = []
-    for course_url in tqdm(courses_urls[:COURSES_COUNT]):
-        selected_courses.append(get_course_info(course_url))
+    courses_urls = courses_urls[:courses_count]
+
+    fetched_courses = []
+    for course_url in tqdm(courses_urls):
+        if courses_fetch_mode == 'api':
+            fetched_courses.append(get_course_info_from_api(course_url))
+        else:  # courses_fetch_mode == 'html'
+            fetched_courses.append(get_course_info(course_url))
 
     try:
-        output_courses_info_to_xlsx(selected_courses, OUTPUT_XSLX_FILENAME)
+        print('Выводим результаты в файл %s' % OUTPUT_XSLX_FILENAME)
+        output_courses_info_to_xlsx(fetched_courses, OUTPUT_XSLX_FILENAME)
     except OSError as error:
         print('Ошибка: %s в файле: %s' % (error.strerror, error.filename))
         exit(1)
