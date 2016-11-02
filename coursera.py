@@ -107,10 +107,9 @@ def get_course_info_from_api(course_slug: str) -> list:
     :param course_slug: url курса
     :return: список данных по курсу (без рейтинга, его нет в api)
     """
-    COURSES_API_URL_HEAD = 'https://www.coursera.org/learn/'
-    shorted_slug = course_slug.replace(COURSES_API_URL_HEAD, '')
+    slug = course_slug.split('/')[-1]
     url = 'https://api.coursera.org/api/courses.v1?q=slug&slug=%s' % \
-        shorted_slug + '&fields=name,primaryLanguages,subtitleLanguages,' + \
+        slug + '&fields=name,primaryLanguages,subtitleLanguages,' + \
         'startDate,workload'
     response = requests.get(url)
     response.raise_for_status()
