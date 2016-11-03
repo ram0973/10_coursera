@@ -35,7 +35,7 @@ def handle_requests_library_exceptions(decorated):
     def decorator(*args, **kwargs):
         try:
             return decorated(*args, **kwargs)
-        except ConnectionError:
+        except requests.ConnectionError:
             print('Ошибка сетевого соединения')
             exit(1)
         except requests.HTTPError as e:
