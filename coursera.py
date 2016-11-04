@@ -105,7 +105,7 @@ def get_course_info_from_api(course_slug: str) -> list:
     Получаем данные по курсу из api
     https://building.coursera.org/app-platform/catalog/
     :param course_slug: url курса
-    :return: список данных по курсу (без рейтинга, его нет в api)
+    :return: список данных по курсу (без рейтинга)
     """
     slug = course_slug.split('/')[-1]
     url = 'https://api.coursera.org/api/courses.v1?q=slug&slug=%s' % \
@@ -132,7 +132,8 @@ def get_course_info_from_api(course_slug: str) -> list:
 
     weeks = course['elements'][0]['workload']
 
-    #  тут ratings = None потому что не знаю как инфу по нему найти
+    #  тут ratings = None потому что не знаю как инфу по нему найти,
+    #  даже написал в coursera
     return [title, lang, start_date, weeks, None]
 
 
