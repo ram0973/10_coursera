@@ -132,7 +132,7 @@ def get_course_info_from_api(course_slug: str) -> list:
 
     weeks = course['elements'][0]['workload']
 
-    #  тут ratings = None потому что не знаю как инфу по нему
+    #  тут ratings = None потому что не знаю как инфу по нему найти
     return [title, lang, start_date, weeks, None]
 
 
