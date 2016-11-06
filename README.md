@@ -28,6 +28,7 @@ Python 3.5.2+
 Внешний модуль lxml
 Внешний модуль beautifulsoup4
 Внешний модуль openpyxl
+Внешний модуль babel
 ```
 
 ## Установка
@@ -71,6 +72,7 @@ pip3 install -r requirements.txt
 Далее полученные данные выводятся в файл OUTPUT_XSLX_FILENAME.
 
 ## Настройки
+
 ```
 COURSERA_COURSES_XML - путь к xml-файлу 
 COURSES_COUNT - количество курсы для вывода в файл по умолчанию

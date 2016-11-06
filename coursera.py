@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import argparse
 import json
+import os
 import random
 import re
 import requests
@@ -9,12 +10,15 @@ from lxml import etree
 from bs4 import BeautifulSoup
 from tqdm import tqdm
 import time
+import babel
+
+CONNECT_TIMEOUT = 9
+READ_TIMEOUT = 9
 
 from openpyxl import Workbook
 
 COURSERA_COURSES_XML = 'https://www.coursera.org/sitemap~www~courses.xml'
 COURSES_COUNT = 20
-OUTPUT_XSLX_FILENAME = 'Coursera_courses.xslx'
 
 
 def enable_win_unicode_console():
@@ -65,15 +69,20 @@ def get_courses_list(url: str) -> list:
     return [element[0].text for element in tree]
 
 
-@handle_requests_library_exceptions
 def get_course_info(course_slug: str) -> list:
     """
     Получаем данные по курсу с его веб-страницы
     :param course_slug: url курса
     :return: список данных по курсу
     """
-    response = requests.get(course_slug)
-    response.raise_for_status()
+    try:
+        response = requests.get(course_slug, timeout=(
+            CONNECT_TIMEOUT, READ_TIMEOUT))
+        response.raise_for_status()
+    except (requests.ConnectionError, requests.HTTPError, requests.Timeout,
+            requests.TooManyRedirects):
+        return [None, None, None, None, None]
+
     soup = BeautifulSoup(response.content, 'html.parser')
 
     title = soup.find('div', class_='title').text
@@ -111,15 +120,22 @@ def get_course_info_from_api(course_slug: str) -> list:
     url = 'https://api.coursera.org/api/courses.v1?q=slug&slug=%s' % \
         slug + '&fields=name,primaryLanguages,subtitleLanguages,' + \
         'startDate,workload'
-    response = requests.get(url)
-    response.raise_for_status()
+    try:
+        response = requests.get(url, timeout=(
+            CONNECT_TIMEOUT, READ_TIMEOUT))
+        response.raise_for_status()
+    except (requests.ConnectionError, requests.HTTPError, requests.Timeout,
+            requests.TooManyRedirects):
+        return [None, None, None, None, None]
+
     course = response.json()
 
     title = course['elements'][0]['name']
 
     lang = course['elements'][0]['primaryLanguages'] + \
         course['elements'][0]['subtitleLanguages']
-    lang = ', '.join(lang)
+    lang = ', '.join(
+        list(map(lambda x: babel.Locale.parse(x, sep='-').display_name, lang)))
 
     # coursera api дает epoch time в миллисекундах, или строку с описанием даты
     start_date = course['elements'][0]['startDate']
@@ -132,8 +148,7 @@ def get_course_info_from_api(course_slug: str) -> list:
 
     weeks = course['elements'][0]['workload']
 
-    #  тут ratings = None потому что не знаю как инфу по нему найти,
-    #  даже написал в coursera
+    #  тут ratings = None потому что не знаю как инфу по нему найти
     return [title, lang, start_date, weeks, None]
 
 
@@ -150,8 +165,12 @@ def output_courses_info_to_xlsx(courses: list, filepath: str):
     wb.save(filepath)
 
 
-if __name__ == '__main__':
+def set_file_extension(file_name: str, new_ext: str):
+    """ Меняем расширение файла """
+    return '{}.{}'.format(os.path.splitext(file_name)[0], new_ext)
 
+
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--mode', '--m',
                         help='Введите "api" или "html" без кавычек',
@@ -161,6 +180,17 @@ if __name__ == '__main__':
                         help='Введите количество курсов',
                         default=COURSES_COUNT,
                         type=int)
+    parser.add_argument('--outfile', '--o', help='Путь к файлу с результатами',
+                        # required=True
+                        )
+
+    output_file = parser.parse_args().outfile
+    if not output_file:
+        print('Ошибка: вы не задали путь к файлу .xlsx')
+        parser.print_usage()
+        exit(1)
+    output_file = set_file_extension(output_file, 'xlsx')
+
     # тут проверка, целое ли это число будет в argparse
     courses_count = abs(parser.parse_args().count)
     courses_fetch_mode = parser.parse_args().mode
@@ -181,8 +211,13 @@ if __name__ == '__main__':
             fetched_courses.append(get_course_info(course_url))
 
     try:
-        print('Выводим результаты в файл %s' % OUTPUT_XSLX_FILENAME)
-        output_courses_info_to_xlsx(fetched_courses, OUTPUT_XSLX_FILENAME)
+        print('Выводим результаты в файл %s' % output_file)
+        output_courses_info_to_xlsx(fetched_courses, output_file)
     except OSError as error:
         print('Ошибка: %s в файле: %s' % (error.strerror, error.filename))
         exit(1)
+
+
+if __name__ == '__main__':
+
+    main()
