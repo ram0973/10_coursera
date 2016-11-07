@@ -115,7 +115,7 @@ def get_course_info_from_api(course_slug: str) -> list:
     Получаем данные по курсу из api
     https://building.coursera.org/app-platform/catalog/
     :param course_slug: url курса
-    :return: список данных по курсу (без рейтинга)
+    :return: список данных по курсу
     """
     slug = course_slug.split('/')[-1]
     url = COURSERA_API_URL
