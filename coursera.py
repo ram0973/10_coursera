@@ -18,6 +18,7 @@ READ_TIMEOUT = 9
 from openpyxl import Workbook
 
 COURSERA_COURSES_XML = 'https://www.coursera.org/sitemap~www~courses.xml'
+COURSERA_API_URL = 'https://api.coursera.org/api/courses.v1'
 COURSES_COUNT = 20
 
 
@@ -117,12 +118,14 @@ def get_course_info_from_api(course_slug: str) -> list:
     :return: список данных по курсу (без рейтинга)
     """
     slug = course_slug.split('/')[-1]
-    url = 'https://api.coursera.org/api/courses.v1?q=slug&slug=%s' % \
-        slug + '&fields=name,primaryLanguages,subtitleLanguages,' + \
-        'startDate,workload'
+    url = COURSERA_API_URL
+    params = {'q': 'slug', 'slug': slug, 'includes': 'courseDerivatives',
+              'fields': 'name,primaryLanguages,subtitleLanguages,' +
+                        'courseDerivatives.v1(averageFiveStarRating),' +
+                        'startDate,workload'}
     try:
         response = requests.get(url, timeout=(
-            CONNECT_TIMEOUT, READ_TIMEOUT))
+            CONNECT_TIMEOUT, READ_TIMEOUT), params=params)
         response.raise_for_status()
     except (requests.ConnectionError, requests.HTTPError, requests.Timeout,
             requests.TooManyRedirects):
@@ -148,8 +151,13 @@ def get_course_info_from_api(course_slug: str) -> list:
 
     weeks = course['elements'][0]['workload']
 
-    #  тут ratings = None потому что не знаю как инфу по нему найти
-    return [title, lang, start_date, weeks, None]
+    try:
+        ratings = course['linked']['courseDerivatives.v1'][0]
+        ratings = ratings['averageFiveStarRating']
+    except KeyError:
+        ratings = None
+
+    return [title, lang, start_date, weeks, ratings]
 
 
 def output_courses_info_to_xlsx(courses: list, filepath: str):
@@ -175,7 +183,7 @@ def main():
     parser.add_argument('--mode', '--m',
                         help='Введите "api" или "html" без кавычек',
                         choices=['api', 'html'],
-                        default='html')
+                        default='api')
     parser.add_argument('--count', '--c',
                         help='Введите количество курсов',
                         default=COURSES_COUNT,
