@@ -11,12 +11,10 @@ from bs4 import BeautifulSoup
 from tqdm import tqdm
 import time
 import babel
+from openpyxl import Workbook
 
 CONNECT_TIMEOUT = 9
 READ_TIMEOUT = 9
-
-from openpyxl import Workbook
-
 COURSERA_COURSES_XML = 'https://www.coursera.org/sitemap~www~courses.xml'
 COURSERA_API_URL = 'https://api.coursera.org/api/courses.v1'
 COURSES_COUNT = 20
