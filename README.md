@@ -59,6 +59,7 @@ pip3 install -r requirements.txt
 1) mode - способ получения данных - через сайт или через api 
 (по умолчанию через сайт),
 2) count - число курсов для вывода (по умолчанию 20)
+И один обязательный - outfile - имя файла с результатом
 
 Скрипт загружает url курсов из XML-файла COURSERA_COURSES_XML,
 полученные url курсов перемешиваются случайным образом, 
@@ -76,7 +77,6 @@ pip3 install -r requirements.txt
 ```
 COURSERA_COURSES_XML - путь к xml-файлу 
 COURSES_COUNT - количество курсы для вывода в файл по умолчанию
-OUTPUT_XSLX_FILENAME
 ```
 
 ## Запуск
@@ -84,13 +84,13 @@ OUTPUT_XSLX_FILENAME
 Windows
 
 ```
-python coursera.py
+python coursera.py --o result.xlsx
 ```
  
 Linux
 
 ``` 
-python3 coursera.py
+python3 coursera.py --o result.xlsx
 ```
  
 ## Лицензия

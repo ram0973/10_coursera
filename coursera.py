@@ -107,7 +107,6 @@ def get_course_info(course_slug: str) -> list:
     return [title, lang, start_date, weeks, ratings]
 
 
-@handle_requests_library_exceptions
 def get_course_info_from_api(course_slug: str) -> list:
     """
     Получаем данные по курсу из api
