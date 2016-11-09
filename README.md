@@ -68,7 +68,7 @@ pip3 install -r requirements.txt
 Далее, зависимости от выбранного способа загрузки информации:
 
 Страницы курсов парсятся, или скрипт получает данные из 
-(api)[https://building.coursera.org/app-platform/catalog/]   
+[api](https://building.coursera.org/app-platform/catalog/)   
 
 Далее полученные данные выводятся в файл OUTPUT_XSLX_FILENAME.
 
